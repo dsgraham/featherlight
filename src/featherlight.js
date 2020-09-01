@@ -1,10 +1,10 @@
 /**
  * Featherlight - ultra slim jQuery lightbox
- * Version 1.7.14-UMD - http://noelboss.github.io/featherlight/
+ * Version 1.8.0-UMD - http://noelboss.github.io/featherlight/
  *
- * Copyright 2019, Noël Raoul Bossart (http://www.noelboss.com)
+ * Copyright 2020, Noël Raoul Bossart (http://www.noelboss.com)
  * MIT Licensed.
-**/
+ **/
 (function (factory) {
 	if (typeof define === 'function' && define.amd) {
 		// AMD. Register as an anonymous module.
@@ -117,25 +117,25 @@
 	}
 
 	/* document wide key handler */
-	var eventMap = { keyup: 'onKeyUp', resize: 'onResize' };
+	var eventMap = { keyup: 'onKeyUp', resize: 'onResize', close_by_msg: 'closeFromIframe' };
 
 	var globalEventHandler = function(event) {
 		$.each(Featherlight.opened().reverse(), function() {
 			if (!event.isDefaultPrevented()) {
 				if (false === this[eventMap[event.type]](event)) {
 					event.preventDefault(); event.stopPropagation(); return false;
-			  }
+				}
 			}
 		});
 	};
 
 	var toggleGlobalEvents = function(set) {
-			if(set !== Featherlight._globalHandlerInstalled) {
-				Featherlight._globalHandlerInstalled = set;
-				var events = $.map(eventMap, function(_, name) { return name+'.'+Featherlight.prototype.namespace; } ).join(' ');
-				$(window)[set ? 'on' : 'off'](events, globalEventHandler);
-			}
-		};
+		if(set !== Featherlight._globalHandlerInstalled) {
+			Featherlight._globalHandlerInstalled = set;
+			var events = $.map(eventMap, function(_, name) { return name+'.'+Featherlight.prototype.namespace; } ).join(' ');
+			$(window)[set ? 'on' : 'off'](events, globalEventHandler);
+		}
+	};
 
 	Featherlight.prototype = {
 		constructor: Featherlight,
@@ -182,12 +182,12 @@
 				css = !self.resetCss ? self.namespace : self.namespace+'-reset', /* by adding -reset to the classname, we reset all the default css */
 				$background = $(self.background || [
 					'<div class="'+css+'-loading '+css+'">',
-						'<div class="'+css+'-content">',
-							'<button class="'+css+'-close-icon '+ self.namespace + '-close" aria-label="Close">',
-								self.closeIcon,
-							'</button>',
-							'<div class="'+self.namespace+'-inner">' + self.loading + '</div>',
-						'</div>',
+					'<div class="'+css+'-content">',
+					'<button class="'+css+'-close-icon '+ self.namespace + '-close" aria-label="Close">',
+					self.closeIcon,
+					'</button>',
+					'<div class="'+self.namespace+'-inner">' + self.loading + '</div>',
+					'</div>',
 					'</div>'].join('')),
 				closeButtonSelector = '.'+self.namespace+'-close' + (self.otherClose ? ',' + self.otherClose : '');
 
@@ -266,22 +266,22 @@
 
 		/* sets the content of $instance to $content */
 		setContent: function($content){
-      this.$instance.removeClass(this.namespace+'-loading');
+			this.$instance.removeClass(this.namespace+'-loading');
 
-      /* we need a special class for the iframe */
-      this.$instance.toggleClass(this.namespace+'-iframe', $content.is('iframe'));
+			/* we need a special class for the iframe */
+			this.$instance.toggleClass(this.namespace+'-iframe', $content.is('iframe'));
 
-      /* replace content by appending to existing one before it is removed
-         this insures that featherlight-inner remain at the same relative
-         position to any other items added to featherlight-content */
-      this.$instance.find('.'+this.namespace+'-inner')
-        .not($content)                /* excluded new content, important if persisted */
-        .slice(1).remove().end()      /* In the unexpected event where there are many inner elements, remove all but the first one */
-        .replaceWith($.contains(this.$instance[0], $content[0]) ? '' : $content);
+			/* replace content by appending to existing one before it is removed
+				 this insures that featherlight-inner remain at the same relative
+				 position to any other items added to featherlight-content */
+			this.$instance.find('.'+this.namespace+'-inner')
+				.not($content)                /* excluded new content, important if persisted */
+				.slice(1).remove().end()      /* In the unexpected event where there are many inner elements, remove all but the first one */
+				.replaceWith($.contains(this.$instance[0], $content[0]) ? '' : $content);
 
-      this.$content = $content.addClass(this.namespace+'-inner');
+			this.$content = $content.addClass(this.namespace+'-inner');
 
-      return this;
+			return this;
 		},
 
 		/* opens the lightbox. "this" contains $instance with the lightbox, and with the config.
@@ -354,7 +354,7 @@
 				/* Reset apparent image size first so container grows */
 				this.$content.css('width', '').css('height', '');
 				/* Calculate the worst ratio so that dimensions fit */
-				 /* Note: -1 to avoid rounding errors */
+				/* Note: -1 to avoid rounding errors */
 				var ratio = Math.max(
 					w  / (this.$content.parent().width()-1),
 					h / (this.$content.parent().height()-1));
@@ -441,6 +441,20 @@
 						// We can't move an <iframe> and avoid reloading it,
 						// so let's put it in place ourselves right now:
 						.appendTo(this.$instance.find('.' + this.namespace + '-content'));
+
+					// Create an event listener so the close can be triggered from within the iFrame.
+					// Just handles close events for now.
+					var validOrigin = url.split('/').slice(0, 3).join('/');
+					var listenerFunc = function(e) {
+						if (e.origin !== validOrigin) {
+							return;
+						} else {
+							if (e.data === 'close') {
+								$.featherlight.close();
+							}
+						}
+					};
+					window.addEventListener('message', listenerFunc, false);
 					return deferred.promise();
 				}
 			},
