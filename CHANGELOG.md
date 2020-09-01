@@ -5,7 +5,7 @@ Master
 -----------------------------------
 
 
-1.8.0 - 2020-09-01
+1.7.15 - 2020-09-01
 -----------------------------------
 - Added an event listener for initiating a close from within an iframe
 
