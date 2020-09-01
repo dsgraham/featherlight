@@ -5,6 +5,10 @@ Master
 -----------------------------------
 
 
+1.8.0 - 2020-09-01
+-----------------------------------
+- Added an event listener for initiating a close from within an iframe
+
 1.7.0 - 2016-12-22
 -----------------------------------
 - Can now specify standard iFrame attributes and CSS [#269]
